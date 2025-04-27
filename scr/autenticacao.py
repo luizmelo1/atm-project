@@ -132,4 +132,4 @@ def autenticar_usuario():
         print(f'\nBem-vindo(a), {usuarios[conta]['nome']}!')
         return conta
     else:
-        print('\nErro: Conta ou senha in
+        print('\nErro: Conta ou senha inválida!')
