@@ -19,6 +19,23 @@ def validar_telefone(telefone):
     padrao = r'^\(\d{2}\) \d{5}-\d{4}$'
     return re.match(padrao, telefone)
 
+def validar_data_nascimento(data_str):
+    try:
+        data_nasc = datetime.strptime(data_str, '%d/%m/%Y')
+        hoje = datetime.now()
+        idade = hoje.year - data_nasc.year - ((hoje.moth, hoje.day) < (data_nasc.month, data_nasc.day))
+
+        if data_nasc > hoje:
+            print("Erro: Data de nascimento não pode ser futura!")
+            return False
+        elif idade < 18:
+            print("Erro: É necessário ter 18 anos ou mais para se cadastrar.")
+            return False
+        return True
+    except ValueErro:
+        print("Erro: Formado inválido. Exemplo: DD/MM/AAAA")
+        return False
+
 def registrar_usuario():
     usuraio = carregar_usuarios()
 
@@ -63,6 +80,14 @@ def registrar_usuario():
                 break
             print('Erro: Formato inválido. Exemplo: (83) 91234-5678')
 
+        # Data de Nascimento
+        while True:
+            senha = input('Data de nascimento (DD/MM/AAAA): ').strip()
+            if validar_data_nascimento(data_nasc):
+                data_iso = datatime.strptime(data_naasc, '%d/%m/%Y').strtime('%Y-%m-%d')  # Converte para formato ISO (AAAA-MM-DD)
+                break
+            print('Erro: Formato inválido. Exemplo: DD/MM/AAAA')
+
         # Senha
         while True:
             senha = input("Crie uma senha (4 dígitos): ").strip()
@@ -83,6 +108,7 @@ def registrar_usuario():
             "email": email,
             "cpf": cpf,
             "telefone": telefone,
+            "data_nascimento": data_iso,
             "senha": senha,
             "saldo": 0.0,
             "historico": [],
@@ -106,4 +132,4 @@ def autenticar_usuario():
         print(f'\nBem-vindo(a), {usuarios[conta]['nome']}!')
         return conta
     else:
-        print('\nErro: Conta ou senha inválida!')
+        print('\nErro: Conta ou senha in
