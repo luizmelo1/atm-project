@@ -15,4 +15,18 @@ def consultar_saldo(conta: str) -> None:
 
             # Validações
             if valor <= 0:
-                print('Erro: VAlor deve ser positivo.')
+                print('Erro: Valor deve ser positivo.')
+                return
+            if valor > usuario[conta]['saldo']:
+                print('Erro: Saldo insuficiente.')
+                return
+            
+            # atualiza saldo e histórico
+            usuario[conta]['saldo'] -= valor
+            transacao = f"{datetime.now().strftime('%Y-%m-%d %H:%M'): Saque de R$ {valor:.2f}}"
+
+            salvar_usuarios(usuarios)
+            print('\n✅ Saque realizado com sucesso!')
+
+        except ValueError:
+            print('Erro: Valor inválido! Use números (ex: 100.50).')
