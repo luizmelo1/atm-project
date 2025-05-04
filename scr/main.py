@@ -1,1 +1,0 @@
-# Entrada do programa
