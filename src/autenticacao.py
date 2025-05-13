@@ -3,135 +3,82 @@ import re
 from datetime import datetime
 from database import carregar_usuarios, salvar_usuarios
 
-def validar_email(email):
+def validar_email(email: str) -> bool:
+    """Valida o formato de e-mail usando regex."""
     padrao = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-    return re.match(padrao, email)
+    return re.match(padrao, email) is not None
 
-def validar_cpf(cpf):
+def validar_cpf(cpf: str) -> bool:
+    """Valida o formato do CPF (XXX.XXX.XXX-XX)."""
     padrao = r"^\d{3}\.\d{3}\.\d{3}-\d{2}$"
-    return re.match(padrao, cpf)
+    return re.match(padrao, cpf) is not None
 
-def validar_telefone(telefone):
+def validar_telefone(telefone: str) -> bool:
+    """Valida o formato do telefone ((XX) 9XXXX-XXXX)."""
     padrao = r"^\(\d{2}\) \d{5}-\d{4}$"
-    return re.match(padrao, telefone)
+    return re.match(padrao, telefone) is not None
 
-def validar_data_nascimento(data_str):
+def validar_data_nascimento(data_str: str) -> datetime:
+    """Valida a data de nascimento e calcula a idade mínima (18 anos)."""
     try:
-        data_nasc = datetime.strptime(data_str, "%d/%m/%Y")  # Corrigido aqui!
-        hoje = datetime.now()
-        idade = hoje.year - data_nasc.year - ((hoje.month, hoje.day) < (data_nasc.month, data_nasc.day))
-        
-        if data_nasc > hoje:
-            print("Erro: Data de nascimento não pode ser futura!")
-            return False
-        elif idade < 18:
-            print("Erro: É necessário ter 18 anos ou mais!")
-            return False
-        elif data_nasc.year < 1900:
-            print("Erro: Data de nascimento inválida!")
-            return False
-        return True
+        data = datetime.strptime(data_str, "%d/%m/%Y")
+        idade = datetime.now().year - data.year - ((datetime.now().month, datetime.now().day) < (data.month, data.day))
+        if idade < 18:
+            raise ValueError("Idade mínima de 18 anos não atingida.")
+        return data
     except ValueError:
-        print("Erro: Formato inválido (use DD/MM/AAAA).")
-        return False
+        raise ValueError("Formato inválido. Use DD/MM/AAAA.")
 
-def registrar_usuario():
-    usuarios = carregar_usuarios()
+def registrar_usuario_logica(
+    nome: str,
+    email: str,
+    cpf: str,
+    telefone: str,
+    data_nasc: str,
+    senha: str,
+    confirmacao_senha: str
+) -> str:
+    """Registra um novo usuário após validar todos os campos."""
+    # Validações básicas
+    if senha != confirmacao_senha:
+        raise ValueError("As senhas não coincidem.")
+    if not validar_email(email):
+        raise ValueError("E-mail inválido.")
+    if not validar_cpf(cpf):
+        raise ValueError("CPF inválido.")
+    if not validar_telefone(telefone):
+        raise ValueError("Telefone inválido.")
     
-    print("\n" + "=" * 40)
-    print("          CADASTRO DE USUÁRIO          ")
-    print("=" * 40)
-
-    # Nome completo
-    while True:
-        nome = input("\nNome completo: ").strip()
-        if len(nome) >= 5 and " " in nome:
-            break
-        print("Erro: Nome deve ter pelo menos 5 caracteres e um espaço.")
-
-    # E-mail
-    while True:
-        email = input("E-mail: ").strip().lower()
-        if validar_email(email):
-            email_existente = any(user["email"] == email for user in usuarios.values())
-            if not email_existente:
-                break
-            print("Erro: E-mail já cadastrado!")
-        else:
-            print("Erro: Formato inválido (exemplo: nome@provedor.com).")
-
-    # CPF
-    while True:
-        cpf = input("CPF (XXX.XXX.XXX-XX): ").strip()
-        if validar_cpf(cpf):
-            cpf_existente = any(user["cpf"] == cpf for user in usuarios.values())
-            if not cpf_existente:
-                break
-            print("Erro: CPF já cadastrado!")
-        else:
-            print("Erro: Formato inválido (use XXX.XXX.XXX-XX).")
-
-    # Telefone
-    while True:
-        telefone = input("Telefone (DDD) 9XXXX-XXXX: ").strip()
-        if validar_telefone(telefone):
-            break
-        print("Erro: Formato inválido (ex: (11) 91234-5678).")
-
-    # Data de Nascimento (Correção principal aqui!)
-    data_nasc = None  # Inicializa a variável
-    while True:
-        data_input = input("Data de nascimento (DD/MM/AAAA): ").strip()
-        if validar_data_nascimento(data_input):
-            data_nasc = data_input  # Atribui o valor válido
-            break
-
-    # Convertendo para formato ISO
-    data_iso = datetime.strptime(data_nasc, "%d/%m/%Y").strftime("%Y-%m-%d")
-
-    # Senha
-    while True:
-        senha = input("Crie uma senha (4 dígitos): ").strip()
-        if len(senha) == 4 and senha.isdigit():
-            confirmacao = input("Confirme a senha: ").strip()
-            if senha == confirmacao:
-                break
-            print("Erro: As senhas não coincidem!")
-        else:
-            print("Erro: A senha deve ter 4 dígitos numéricos.")
-
-    # Gera número da conta
+    # Verifica duplicatas
+    usuarios = carregar_usuarios()
+    if any(u["email"] == email for u in usuarios.values()):
+        raise ValueError("E-mail já cadastrado.")
+    if any(u["cpf"] == cpf for u in usuarios.values()):
+        raise ValueError("CPF já cadastrado.")
+    
+    # Cria a conta
     numero_conta = str(len(usuarios) + 1).zfill(6)
-
-    # Salva os dados
+    data_nasc_validada = validar_data_nascimento(data_nasc)
+    
     usuarios[numero_conta] = {
-        "nome": nome,
-        "email": email,
-        "cpf": cpf,
-        "telefone": telefone,
-        "data_nascimento": data_iso,
+        "nome": nome.strip(),
+        "email": email.lower().strip(),
+        "cpf": cpf.strip(),
+        "telefone": telefone.strip(),
+        "data_nascimento": data_nasc_validada.strftime("%Y-%m-%d"),
         "senha": senha,
         "saldo": 0.0,
         "historico": [],
         "data_cadastro": datetime.now().strftime("%Y-%m-%d %H:%M")
     }
-
+    
     salvar_usuarios(usuarios)
-    print(f"\n✅ Cadastro concluído! Número da conta: {numero_conta}")
+    return numero_conta
 
-def autenticar_usuario():
+def autenticar_usuario(conta: str, senha: str) -> dict:
+    """Autentica o usuário com base na conta e senha."""
     usuarios = carregar_usuarios()
-    
-    print("\n" + "=" * 40)
-    print("               LOGIN               ")
-    print("=" * 40)
-    
-    conta = input("\nNúmero da conta: ").strip()
-    senha = input("Senha: ").strip()
-    
-    if conta in usuarios and usuarios[conta]["senha"] == senha:
-        print(f"\nBem-vindo(a), {usuarios[conta]['nome']}!")
-        return conta
-    else:
-        print("\nErro: Conta ou senha inválida!")
-        return None
+    usuario = usuarios.get(conta)
+    if usuario and usuario["senha"] == senha:
+        return usuario
+    raise ValueError("Conta ou senha inválida.")
