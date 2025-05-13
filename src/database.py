@@ -2,34 +2,25 @@
 import json
 import os
 
-def carregar_usuarios(): 
-    """Carregar os dados dos usuários do arquivo JSON.
-    Retorna um dicionário vazio se o arquivo não existir."""
+def carregar_usuarios() -> dict:
+    """Carrega os dados do arquivo JSON ou retorna um dicionário vazio."""
+    caminho = os.path.join(os.path.dirname(__file__), "..", "data", "usuarios.json")
     try:
-        # Verifica se a pasta "data" existe; se não, cria a pasta.
-        if not os.path.exists('../data'):
-            os.markedirs('../data')
-
-        with open('../data/usuarios.json', 'r', encoding='utf-8') as arquivo:
+        with open(caminho, "r", encoding="utf-8") as arquivo:
             return json.load(arquivo)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return {}
-    except json.JSONDecoderError:
-        print('Erro: Arquivo de dados corrompido. Iniciando com dados vazios.')
-        return {}
+
+def salvar_usuarios(usuarios: dict) -> None:
+    """Salva os dados no arquivo JSON, criando a pasta se necessário."""
+    pasta = os.path.join(os.path.dirname(__file__), "..", "data")
+    caminho = os.path.join(pasta, "usuarios.json")
     
-def salvar_usuarios(usuarios):
-    """Salvar os dados dos usuários no arquivo JSON.
-    Cria a pasta "data" se ela não existir."""
-    try:
-        if not os.path.exists('../data'):
-            os.makedirs('../data')
-
-        with open('../data/usuarios.json', 'w', encoding='utf-8') as arquivo:
-            json.dump(usuarios, arquivo, indent=4, ensure_ascii=False)
-    except Exception as e:
-        print(f'Erro ao salvar dados: {e}')
-
+    if not os.path.exists(pasta):
+        os.makedirs(pasta)
+    
+    with open(caminho, "w", encoding="utf-8") as arquivo:
+        json.dump(usuarios, arquivo, indent=4, ensure_ascii=False)
 # Exemplo de estrutura do arquivo usuarios.json:
 #{
 #   "000001": {

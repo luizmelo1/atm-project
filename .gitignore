@@ -1,2 +1,3 @@
+data/usuarios.json
 __pycache__/
-*.__pycache__data/usuarios.json
+*.pyc
