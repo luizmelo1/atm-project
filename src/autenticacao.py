@@ -4,7 +4,7 @@ from datetime import datetime
 from database import carregar_usuarios, salvar_usuarios
 
 def validar_email(email: str) -> bool:
-    """Valida o formato de e-mail usando regex."""
+    """Valida o formato de e-mail usando exemplo@exemplo.com"""
     padrao = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
     return re.match(padrao, email) is not None
 
